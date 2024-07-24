@@ -1,14 +1,16 @@
 {
   "expo": {
-    "name": "EQ_Solver",
-    "slug": "EQ_Solver",
+    "scheme": "mycoolredirect",
+    "jsEngine": "hermes",
+    "name": "EQ_Solutions",
+    "slug": "EQ_Solutions",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
-      "resizeMode": "contain",
+      "resizeMode": "cover",
       "backgroundColor": "#ffffff"
     },
     "ios": {
@@ -18,10 +20,17 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.ryzeinc.EQ_Solutions"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      
+      "eas": {
+        "projectId": "a1652ecf-5786-4405-8527-eeff7909d946"
+      }
     }
   }
 }
