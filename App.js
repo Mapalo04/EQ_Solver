@@ -3,8 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from './Screens/HomeScreen';
-import Profile from './Screens/Profile';
-import Settings from './Screens/Settings';
+import * as SecureStore from 'expo-secure-store'
 import { NavigationContainer } from '@react-navigation/native';
 import { PaperProvider } from 'react-native-paper';
 import LoginScreen from './Screens/Accounts/LoginScreen';
@@ -15,39 +14,49 @@ import Header from './Screens/Header';
 import { ApolloProvider } from '@apollo/client';
 import client from './hooks/ApolloClientSetup';
 import PaymentScreen from './Screens/PaymentScreen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import TopicLists from './Screens/Grades/Topics/TopicLists';
 import TermTopics from './Screens/Grades/TermTopics';
 import TopicContent from './Screens/Grades/Topics/TopicContent';
 import WeeklyD from './Screens/Tasks/WeeklyD';
+import { ScoreContext } from './Context/Score';
+import { PaidContext, PaidDateContext, PaymentIdContext } from './Context/Paid';
 
 
 const Stack = createStackNavigator();
 
 const tokenCache = {
-  async getToken(key) {
+  getToken: (key) => {
     try {
       return SecureStore.getItemAsync(key);
     } catch (err) {
       return null;
     }
   },
-  async saveToken(key, value) {
+  saveToken: (key, token) => {
     try {
-      return SecureStore.setItemAsync(key, value);
+      return SecureStore.setItemAsync(key, token);
     } catch (err) {
-      return;
+      return null;
     }
   },
 };
 
 const App = () => {
+  const [scores, setScores] = useState(0);
+  const [paidS, setPaidS] = useState("No");
+  const [paidDateC, setPaidDateC] = useState(0);
+  const [paymentId, setPaymentId] = useState("");
 
   return (
     <PaperProvider>
       <StatusBar hidden={true}/>
     <ApolloProvider client={client}>
-    <ClerkProvider publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY} >
+    <ClerkProvider tokenCache={tokenCache} publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY} >
+        <ScoreContext.Provider value={{scores, setScores}}>
+        <PaidContext.Provider value={{paidS, setPaidS}}>
+        <PaidDateContext.Provider value={{paidDateC, setPaidDateC}}>
+        <PaymentIdContext.Provider value={{paymentId, setPaymentId}}>
         <SignedIn>
         <NavigationContainer style={styles.container}>
           
@@ -72,6 +81,10 @@ const App = () => {
           </Stack.Navigator>
           </NavigationContainer>
         </SignedOut>
+        </PaymentIdContext.Provider>
+        </PaidDateContext.Provider>
+        </PaidContext.Provider>
+        </ScoreContext.Provider>
     </ClerkProvider>
     </ApolloProvider>
     

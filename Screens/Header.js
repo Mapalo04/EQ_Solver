@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View, Image, TouchableOpacity, TextInput, Dimensions } from 'react-native'
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Colors from '../hooks/Colors'
 import { useUser } from '@clerk/clerk-expo'
@@ -7,25 +7,16 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { AntDesign } from '@expo/vector-icons';
 import { gql, useQuery } from '@apollo/client'
 import { useNavigation } from '@react-navigation/native'
+import { ScoreContext } from '../Context/Score'
 
 const Header = ({searchText, setSearchText}) => {
     const {isLoaded, isSignedIn, user} = useUser();
+    const {scores, setScores} = useContext(ScoreContext);
     const navigation = useNavigation();
     const widthW = Dimensions.get('screen').width;
 
-    const GET_ITEMS = gql`
-    query Students {
-      student(where: {email: "${user.primaryEmailAddress.emailAddress}"}) {
-        paidStatus
-        school
-        score
-      }
-    }
-  `;
-  
-  const { loading, error, data } = useQuery(GET_ITEMS);
 
-  const studentData = data?.student;
+
   return isLoaded && (
     <SafeAreaView style={[styles.MainContainer, {width: widthW}]}>
     <View style={{paddingHorizontal: 18, flexDirection: "row", alignItems: "center", justifyContent: "space-between"}}>
@@ -37,7 +28,7 @@ const Header = ({searchText, setSearchText}) => {
       </View>
       </TouchableOpacity>
       <View style={{flexDirection: "row", alignItems: "center"}}>
-        <Text>{studentData?.score} </Text>
+        <Text>{scores} </Text>
         <MaterialCommunityIcons name='progress-star' size={25} style={{color: "gold"}}/>
       </View>
       

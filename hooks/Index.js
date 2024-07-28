@@ -7,8 +7,8 @@ export const updateProfileInfo = async (
   paidStatus,
   user,
   FullName,
-  score=0,
-  paidDate = 0
+  paidDate = 0,
+  score = 0
 ) => {
   const email = user?.primaryEmailAddress.emailAddress;
   const profilePic = user?.imageUrl;
@@ -16,16 +16,16 @@ export const updateProfileInfo = async (
     const GET_ITEMS =gql`
     mutation MyMutation {
       upsertStudent(
-        upsert: {create: {email: "${email}",
-        fullName: "${fullName}", 
-        paidDate: ${paidDate}, 
-        paidStatus: "${paidStatus}", 
-        profilePic: "${profilePic}", 
-        score: ${score}}, 
-        update: {paidDate: ${paidDate}, 
+        upsert: { 
+        create: {email: "${email}",
+          fullName: "${FullName}", 
+          paidDate: ${paidDate}, 
           paidStatus: "${paidStatus}", 
           profilePic: "${profilePic}", 
-          score: ${score}}}
+          score: ${score}},
+          update: {paidDate: ${paidDate}, 
+          paidStatus: "${paidStatus}", 
+          profilePic: "${profilePic}"}} 
         where: {email: "${email}"}
       ) {
         id
@@ -49,7 +49,6 @@ export const updateProfileInfo = async (
           profilePic: "${profilePic}", 
           score: ${score}}, 
           update: {
-            score: ${score},
             fullName: "${FullName}", 
             profilePic: "${profilePic}"}}
           where: {email: "${email}"}
@@ -89,6 +88,7 @@ export const getStudentInfo = async (userEmail) => {
         school
         score
         paidDate
+        transId
       }
     }
   `;
@@ -96,11 +96,29 @@ export const getStudentInfo = async (userEmail) => {
     return result;
 }
 
-export const updatePayment = async (Email, paidDate, transId) => {
+export const updateTransId = async (Email, transId) => {
   const GET_ITEMS = gql`
   mutation MyMutation {
     upsertStudent(
-      upsert: {update: {paidDate: ${paidDate}, paidStatus: "Yes", transId: "${transId}"}, create: {email: ""}}
+      upsert: {update: {paidStatus: "Yes", transId: "${transId}"}, create: {email: ""}}
+      where: {email: "${Email}"}
+    ) {
+      id
+    }
+    publishStudent(where: {email: "${Email}"}) {
+      id
+    }
+  }
+  `;
+  const result = await request(MASTER_URL, GET_ITEMS);
+    return result;
+}
+
+export const updatePaidDate = async (Email, paidDate) => {
+  const GET_ITEMS = gql`
+  mutation MyMutation {
+    upsertStudent(
+      upsert: {update: {paidDate: ${paidDate}, paidStatus: "Yes"}, create: {email: ""}}
       where: {email: "${Email}"}
     ) {
       id
@@ -125,6 +143,25 @@ export const updateIsPaid = async (Email, isPaid) => {
     }
     publishStudent(where: {email: "${Email}"}) {
       id
+    }
+  }
+  `;
+  const result = await request(MASTER_URL, GET_ITEMS);
+    return result;
+}
+
+export const updateScore = async (Email, Score) => {
+  const GET_ITEMS = gql`
+  mutation MyMutation {
+    upsertStudent(
+      upsert: {update: {score: ${Score}}, create: {email: ""}}
+      where: {email: "${Email}"}
+    ) {
+      id
+    }
+    publishStudent(where: {email: "${Email}"}) {
+      id
+      score
     }
   }
   `;
@@ -185,6 +222,18 @@ export const getQuestions = async (category) => {
           html
         }
       }
+    }
+  }
+  `;
+
+  const result = await request(MASTER_URL, GET_ITEMS);
+    return result;
+}
+export const getPrice = async () => {
+  const GET_ITEMS = gql`
+  query MyQuery {
+    companies {
+      price
     }
   }
   `;

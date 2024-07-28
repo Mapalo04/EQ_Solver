@@ -1,15 +1,17 @@
 import { StyleSheet, Text, View, Image, ScrollView, FlatList, Dimensions, SafeAreaView, TouchableOpacity } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import Colors from '../hooks/Colors'
 import { useUser } from '@clerk/clerk-expo'
 import { gql, useQuery } from '@apollo/client'
 import { leaderBoardInfo } from '../hooks/Index'
 import { useIsFocused } from '@react-navigation/native'
+import { ScoreContext } from '../Context/Score'
 
 
 
 const LeaderBoard = () => {
     const {isLoaded, user} = useUser();
+    const {score, setScore} = useContext(ScoreContext);
     const widthW = Dimensions.get('screen').width;
     const [leaderBoardData, setLeaderBoardData] = useState([])
     const isFocused =useIsFocused();

@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useQuery, gql } from '@apollo/client';
 import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev"
 import { View, Text, FlatList, StyleSheet, Image, Dimensions, TouchableOpacity, ScrollView } from 'react-native';
 import Colors from '../../hooks/Colors';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import Header from '../Header';
 import TopicLists from './Topics/TopicListsGrade';
+import { PaidContext, PaidDateContext } from '../../Context/Paid';
 
 
 
@@ -47,9 +48,7 @@ const GradeLists = () => {
     )
   }
 
-  const topicData = data.gradeLevels.filter((item, index) => {
-    return searchText.toLowerCase() === '' ? item: item?.gradeIn.toLowerCase().includes(searchText.toLowerCase());
-  })
+  
 
   const TopicLC = ({grade}) => {
     return (

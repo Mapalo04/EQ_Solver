@@ -7,7 +7,6 @@ const ContentHtml = ({sourceC, colors="black"}) => {
     const source={
         html: sourceC
       }
-      console.log(sourceC)
     const mixedStyle = {
         body: {
           whiteSpace: 'normal',

@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import { StyleSheet } from 'react-native'
+import React, { useContext, useEffect, useState } from 'react'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
@@ -10,13 +10,20 @@ import Colors from '../hooks/Colors'
 import LeaderBoard from './LeaderBoard'
 import Tasks from './Tasks'
 import { useUser } from '@clerk/clerk-expo'
-import { getStudentInfo, updateIsPaid, updateProfileInfo } from '../hooks/Index'
+import { getStudentInfo, updateIsPaid, updateProfileInfo, updateTransId } from '../hooks/Index'
 import { gql, useQuery } from '@apollo/client'
+import { ScoreContext } from '../Context/Score'
+import { PaidContext, PaidDateContext, PaymentIdContext } from '../Context/Paid'
+import { useIsFocused } from '@react-navigation/native'
 
 const Tab = createBottomTabNavigator();
 
 const HomeScreen = () => {
   const {isLoaded, isSignedIn, user} = useUser();
+  const {scores, setScores} = useContext(ScoreContext);
+  const {paidS, setPaidS} = useContext(PaidContext);
+  const {paidDateC, setPaidDateC} = useContext(PaidDateContext);
+  const {paymentId, setPaymentId} = useContext(PaymentIdContext);
   const [creatingUser, setCreateUser] = useState(false);
   const [paidStatus, setPaidStatus] = useState("No");
   const minute = 1000 * 60;
@@ -24,9 +31,11 @@ const HomeScreen = () => {
   const day = hour * 24;
   const T = new Date();
   const timeStamp = Math.round(T.getTime()/day);
+  const isFocused =useIsFocused();
   
 
   const updateInfo = (paidUpdate) => {
+    console.log(paidStatus)
     updateProfileInfo(paidUpdate, paidStatus, user, user.fullName).then(resp => {
     }).catch((err)=>{
       console.log(err)
@@ -37,43 +46,47 @@ const HomeScreen = () => {
   const getInfo = () => {
     getStudentInfo(user?.primaryEmailAddress.emailAddress).then(resp =>{
         updateInfo(false);
-        console.log("homescreen  ", resp.student)
-        setPaidDate(resp.student.paidDate)
-
+        console.log("home", resp.student);
+        setScores(resp.student.score);
+        setPaidS(resp.student.paidStatus);
+        setPaidDateC(resp.student.paidDate);
+        setPaymentId(resp.student.transId);
     }
     )
   }
   const updatePaidStatus = (Paid) => {
     updateIsPaid(user?.primaryEmailAddress.emailAddress, Paid).then(resp =>{
-        setPaidDate(resp.student.paidDate)
 
     }
     )
   }
+  const updatePaymentId = () => {
+    setPaymentId("");
+    updateTransId(Email, "notpaid").then(resp => {
+      console.log("paying", transid)
+    }).catch((err)=>{
+      console.log(err)
+    })
   
-  const GET_ITEMS = gql`
-    query Students {
-      student(where: {email: "${user.primaryEmailAddress.emailAddress}"}) {
-        paidStatus
-        school
-        score
-        paidDate
-      }
-    }
-  `;
-  
-  const { loading, error, data } = useQuery(GET_ITEMS);
-
-  const remainingDays = 30 - (timeStamp - data?.student?.paidDate);
+  }
   
 
+  const remainingDays = 30 - (timeStamp - paidDateC);
+  
+
+  
   useEffect(()=>{
-    setPaidStatus(data?.student?.paidStatus)
+    setPaidStatus(paidS)
     getInfo()
-    if (remainingDays == 30){
+    if (remainingDays <= 0){
+      setPaidS("No");
       updatePaidStatus("No");
+      updatePaymentId();
+    } else {
+      setPaidS("Yes");
+      updatePaidStatus("Yes");
     }
-  }, [])
+  }, [isFocused])
   
   return (
     <>

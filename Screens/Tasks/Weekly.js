@@ -6,7 +6,7 @@ import Colors from '../../hooks/Colors';
 import { AntDesign } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import DropdownComponent from '../Components/DropdownComponent';
-import { getQuestions } from '../../hooks/Index';
+import { getQuestions, getStudentInfo } from '../../hooks/Index';
 
 
 
@@ -23,13 +23,6 @@ const Weekly = () => {
 
   const navigation = useNavigation();
 
-  
-  const topicDetailNavigation = (Content) => {
-    navigation.navigate('TopicContent', {
-      content: Content
-    }
-    )
-  }
 
 
   const getQuestion =() => {

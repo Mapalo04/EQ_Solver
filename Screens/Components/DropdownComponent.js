@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
-  import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
+  import { Alert, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
   import { Dropdown } from 'react-native-element-dropdown';
   import AntDesign from '@expo/vector-icons/AntDesign';
 import { useNavigation } from '@react-navigation/native';
+import { getStudentInfo } from '../../hooks/Index';
+import { useUser } from '@clerk/clerk-expo';
+import { PaidContext, PaidDateContext } from '../../Context/Paid';
 
 
   const DropdownComponent = ({title, data}) => {
@@ -10,6 +13,15 @@ import { useNavigation } from '@react-navigation/native';
     const [isFocus, setIsFocus] = useState(true);
     const widthS= Dimensions.get("screen").width;
     const navigation = useNavigation();
+    const {paidS, setPaidS} = useContext(PaidContext);
+    const {paidDateC, setPaidDateC} = useContext(PaidDateContext);
+    const minute = 1000 * 60;
+  const hour = minute * 60;
+  const day = hour * 24;
+  const T = new Date();
+  const timeStamp = Math.round(T.getTime()/day);
+  const remainingDays = 30 - (timeStamp - paidDateC);
+
 
     /* console.log("name.... ", title, "\ndata=>", data) */
     const renderLabel = () => {
@@ -24,12 +36,14 @@ import { useNavigation } from '@react-navigation/native';
     };
 
     const weeklyNavigation = (Title, Data) => {
-      
+      if (paidS == "Yes" || remainingDays > 0){
       navigation.navigate('WeekT', {
         title: Title,
         data: Data
       }
-      )
+      )} else{
+        Alert.alert("Cannot access this material because you have not paid");
+        }
     }
     
 

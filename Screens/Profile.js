@@ -1,5 +1,5 @@
-import { Image, StyleSheet, Text, View, TouchableOpacity, Dimensions} from 'react-native'
-import React, { useEffect, useState } from 'react'
+import { Image, StyleSheet, Text, View, TouchableOpacity, Dimensions, Alert} from 'react-native'
+import React, { useContext, useEffect, useState } from 'react'
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
 import { Button, Menu } from 'react-native-paper';
@@ -9,15 +9,18 @@ import { FontAwesome } from '@expo/vector-icons';
 import { ScrollView } from 'react-native-gesture-handler';
 import Colors from '../hooks/Colors';
 import { AntDesign } from '@expo/vector-icons';
-import { gql, useQuery } from '@apollo/client';
-import { updateProfileInfo } from '../hooks/Index';
+import { updateIsPaid} from '../hooks/Index';
 import { useNavigation } from '@react-navigation/native';
+import { PaidDateContext } from '../Context/Paid';
+import { ScoreContext } from '../Context/Score';
 
 
 const Profile = () => {
   const {isLoaded, isSignedIn, user} = useUser();
+  const {paidDateC, setPaidDateC} = useContext(PaidDateContext);
+  const {scores, setScores} = useContext(ScoreContext);
   const Vsize = 14;
-  const [paidStatus, setPaidStatus] = useState("No");
+  const paidDate = paidDateC;
   const { signOut } = useAuth();
   const widthW = Dimensions.get('screen').width;
   const [visibleMenu, setVisibleMenu] = useState(true);
@@ -30,6 +33,7 @@ const Profile = () => {
   const day = hour * 24;
   const T = new Date();
   const timeStamp = Math.round(T.getTime()/day);
+  const remainingDays = 30 - (timeStamp - paidDate);
 
 
   if (!isLoaded) {
@@ -70,38 +74,20 @@ const Profile = () => {
     }
   };
 
-  const updateInfo = (paidUpdate) => {
-    updateProfileInfo(paidUpdate, paidStatus, user, user.fullName).then(resp => {
-    }).catch((err)=>{
-      console.log(err)
-    })
-  
-}
-
-
-    const GET_ITEMS = gql`
-    query Students {
-      student(where: {email: "${user.primaryEmailAddress.emailAddress}"}) {
-        paidStatus
-        school
-        score
-        paidDate
-      }
-    }
-  `;
-  
-  const { loading, error, data } = useQuery(GET_ITEMS);
-
-  const remainingDays = 30 - (timeStamp - data?.student?.paidDate);
-
-
-  
-  useEffect (() => {
-    setPaidStatus(remainingDays >= 0 ? "Yes" : "No")
-  }, [])
+  const LogOutAlert = () =>
+    Alert.alert("Confirm", "Do You want to Logout?", [
+      {
+        text: "Cancel",
+        onPress: () => console.log("Cancel Pressed"),
+        style: "cancel",
+      },
+      { text: "Yes", onPress: () => signOut() },
+    ]);
  
+
+
   return (
-    <View>
+    <View >
       <View style={{alignItems: "flex-end", width: widthW, padding: 10}}>
       <Menu
       visible={visibleMenu}
@@ -112,13 +98,10 @@ const Profile = () => {
         </TouchableOpacity>
       }
       >
-        <Menu.Item title="Favorites" leadingIcon={()=>
-          <AntDesign name="like1" size={24} color={"black"} />
+        <Menu.Item onPress={()=>navigation.navigate('Payments', {remainingDays: remainingDays })} title="Payments" leadingIcon={()=>
+          <FontAwesome name="money" size={24} color="black" />
         }/>
-        <Menu.Item onPress={()=>navigation.navigate('Payments', {paid: paidStatus, remainingDays: remainingDays })} title="Payments" leadingIcon={()=>
-          <AntDesign name="like1" size={24} color={"black"} />
-        }/>
-        <Menu.Item onPress={()=>signOut()} title="Logout" leadingIcon={()=>
+        <Menu.Item onPress={()=>LogOutAlert()} title="Logout" leadingIcon={()=>
           <AntDesign name="logout" size={24} color={"black"} />
         }/>
       </Menu>
@@ -158,7 +141,7 @@ const Profile = () => {
           <View style={styles.Content}>
             <Text style={styles.Type}>Score:</Text>
             <View style={{flexDirection: "row", alignItems: "center"}}>
-            <Text style={styles.TypeSecondary}>{data?.student?.score} </Text>
+            <Text style={styles.TypeSecondary}>{scores} </Text>
             <MaterialCommunityIcons name='progress-star' size={Vsize} color= "black"/>
             </View>
           </View>
@@ -186,7 +169,7 @@ const Profile = () => {
           <View style={styles.Content}>
             <Text style={styles.Type}>Remaining Days:</Text>
             <View style={{flexDirection: "row", alignItems: "center"}}>
-            <Text style={styles.TypeSecondary}>{remainingDays} </Text>
+            <Text style={styles.TypeSecondary}>{remainingDays > 0 ? remainingDays : 0} </Text>
             <FontAwesome5 name="coins" size={Vsize} color="black" />
             </View>
           </View>

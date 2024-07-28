@@ -1,5 +1,5 @@
 import { Dimensions, FlatList, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import React, { useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -8,6 +8,11 @@ import Colors from '../../../hooks/Colors';
 import * as Progress from 'react-native-progress';
 import RenderHTML from 'react-native-render-html';
 import ContentHtml from './ContentHtml';
+import SolutionR from './SolutionR';
+import { getStudentInfo, updateScore } from '../../../hooks/Index';
+import { useUser } from '@clerk/clerk-expo';
+import { ScoreContext } from '../../../Context/Score';
+import { PaidContext } from '../../../Context/Paid';
 
 const Tab = createMaterialTopTabNavigator()
 
@@ -17,14 +22,36 @@ const TopicContent = () => {
     const orientationh = Dimensions.get('window').height;
     const navigation = useNavigation();
     const [isFinished, setIsFinished] = useState(false);
-    const [revealSolution, setRevealSolution] = useState(false)
+    const {isLoaded, isSignedIn, user} = useUser();
+    const {scores, setScores} = useContext(ScoreContext);
+    const [score, setScore] = useState(0);
     let ContentRef;
+    
 
     const data = params.content;
 
-    const finishedTopic = () => {
+
+    const updateScores = () => {
+      console.log("score before ", score)
+      updateScore(user?.primaryEmailAddress.emailAddress, score + (5*data.length)).then(resp =>{
+          console.log("updating score", resp.publishStudent.score);
+          setScores(resp.publishStudent.score);
+      }
+      )
       navigation.goBack();
     }
+    const getInfo = () => {
+      getStudentInfo(user?.primaryEmailAddress.emailAddress).then(resp =>{
+          console.log("theee score ", resp.student.score)
+          setScore(resp.student.score);
+  
+      }
+      )
+    }
+  
+    useEffect (()=>{
+      getInfo();
+    }, [3]);
 
   return (
     <SafeAreaView style={styles.mainContainer}>
@@ -74,22 +101,7 @@ const TopicContent = () => {
           </View>
           </View>
           
-          <View style={[styles.ExampleContainer, {paddingBottom: 40}]}>
-          <View style={{width: "100%", padding: 10}}>
-          <TouchableOpacity onPress={()=> setRevealSolution(!revealSolution)} style={[styles.SignUpButton, {width: 100, paddingVertical: 5, borderRadius: 8}]}>
-            <Text style={{color: Colors.WHITE, fontSize: 14, textAlign: "left"}}>solution <AntDesign name="play" size={15} color="white" /></Text>
-          </TouchableOpacity>
-          </View>
-          {revealSolution && <View>
-            <View style={{padding: 8}}>
-              <Text style={[styles.ExplanationText, {fontWeight: "800",}]}>Solution</Text></View>
-          <View style={styles.ExampleTextContainer}>
-          <Text style={[styles.ExampleText, {color: "white"}]}>
-            {item?.example2?.markdown}
-          </Text>
-          </View>
-          </View>}
-          </View>
+          <SolutionR solution={item?.example2?.markdown}/>
           {index+1 >= data.length && <View style={{width: "100%", alignItems: "center", paddingBottom: 50}}>
           <TouchableOpacity onPress={()=> setIsFinished(true)} style={styles.SignUpButton}>
             <Text style={{color: Colors.WHITE, fontSize: 20}}>Finish</Text>
@@ -109,14 +121,11 @@ const TopicContent = () => {
         <Text style={{textAlign: "center", lineHeight: 25, fontSize: 17}}>{"Congraturations you\n have earned"} </Text>
         <Text style={{textAlign: "center", fontWeight: "bold", fontSize: 25}}>{data.length * 10} 
         <MaterialCommunityIcons name='progress-star' size={24} color= "gold"/></Text>
-        <Text style={{textAlign: "center", lineHeight: 25, fontSize: 17}}>{"Like and Get your points"} </Text>
+        <Text style={{textAlign: "center", lineHeight: 25, fontSize: 17}}>{"Get your points 🔥🙌"} </Text>
         
-        <View style={{width: "80%", alignItems: "center", flexDirection: "row", gap: 20}}>
-        <TouchableOpacity onPress={()=> finishedTopic()} style={[styles.SignUpButton, {width: "30%"}]}>
-            <Text style={{color: Colors.WHITE, fontSize: 20}}><AntDesign name="like1" size={15} color={"white"} /> </Text>
-          </TouchableOpacity>
+        <View style={{width: "80%", alignItems: "center", justifyContent: "center", flexDirection: "row"}}>
 
-          <TouchableOpacity onPress={()=> finishedTopic()} style={[styles.SignUpButton, {width: "70%"}]}>
+          <TouchableOpacity onPress={()=> updateScores()} style={[styles.SignUpButton, {width: "70%"}]}>
             <Text style={{color: Colors.WHITE, fontSize: 20}}>Get</Text>
           </TouchableOpacity>
           </View>

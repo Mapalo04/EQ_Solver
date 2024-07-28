@@ -13,8 +13,8 @@ const Tasks = () => {
     <Tab.Navigator>
       <Tab.Screen name='Weekly' component={Weekly} options={{
       }}></Tab.Screen>
-      <Tab.Screen name='Monthly' component={Monthly}></Tab.Screen>
-      <Tab.Screen name='Tests' component={Tests}></Tab.Screen>
+      {/* <Tab.Screen name='Monthly' component={Monthly}></Tab.Screen>
+      <Tab.Screen name='Tests' component={Tests}></Tab.Screen> */}
     </Tab.Navigator>
   )
 }
