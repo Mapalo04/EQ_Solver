@@ -33,7 +33,7 @@ const AnswerContainer = ({answerSubmit, solution, score, setScore}) => {
     }
 
     return(
-    <View style={{marginTop: -150, paddingVertical: 80}}>
+    <View style={{marginTop: -80, paddingVertical: 80}}>
       {hideAnswer && <View style={{paddingHorizontal: 20}}>
         {isCorrect && <View >
         <MaterialCommunityIcons name="sticker-check-outline" size={34} color="green" /></View>}

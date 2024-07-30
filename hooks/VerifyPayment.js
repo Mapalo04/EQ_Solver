@@ -1,5 +1,4 @@
 import axios from "axios";
-import { useContext } from "react";
 import { Alert } from "react-native";
 
 
@@ -53,7 +52,7 @@ if (settle == "successful"){
   VerifyNotice();
 
 } else if (settle == "pay-offline"){
-  Alert.alert("Verification Failed: ", "Payment is offline, please go back to previous screen and pay again");
+  Alert.alert("Verification Failed: ", "Payment is offline, if you entered the pin correctly then wait a bit and press verify button");
 } 
 else   {
   Alert.alert("Verification Failed: ", response.data.data.reasonForFailure);

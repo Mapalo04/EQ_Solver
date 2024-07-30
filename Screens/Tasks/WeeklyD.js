@@ -1,4 +1,4 @@
-import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Dimensions, FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import React, { useContext, useEffect, useState } from 'react'
 import { getQuestions, getStudentInfo, updateIsPaid, updateScore } from '../../hooks/Index'
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -10,6 +10,9 @@ import AnswerContainer from '../Components/AnswerContainer';
 import { AntDesign } from '@expo/vector-icons';
 import { useUser } from '@clerk/clerk-expo';
 import { ScoreContext } from '../../Context/Score';
+import { PaidContext, PaidDateContext, PaymentIdContext } from '../../Context/Paid';
+import { getDatabase, ref, update } from 'firebase/database';
+import { app } from '../../config/firebase';
 
 
 
@@ -20,36 +23,42 @@ const WeeklyD = () => {
   const [score, setScore] = useState(0);
   const height = Dimensions.get('screen').height;
   const {isLoaded, isSignedIn, user} = useUser();
+  const Email = user.primaryEmailAddress.emailAddress;
   const {scores, setScores} = useContext(ScoreContext);
+  const {paidS, setPaidS} = useContext(PaidContext);
+  const {paidDateC, setPaidDateC} = useContext(PaidDateContext);
+  const {paymentId, setPaymentId} = useContext(PaymentIdContext);
   const navigation = useNavigation();
 
   const updateScores = () => {
-    console.log("score before ", score)
-    updateScore(user?.primaryEmailAddress.emailAddress, score).then(resp =>{
-        console.log("updating score", resp.publishStudent.score);
-        setScores(resp.publishStudent.score);
-        
-    }
-    )
+    setScores(score+scores);
+    updateUserData();
     navigation.goBack();
   }
-  const getInfo = () => {
-    getStudentInfo(user?.primaryEmailAddress.emailAddress).then(resp =>{
-        setScore(resp.student.score+score);
 
-    }
-    )
+  function updateUserData() {
+    // A post entry.
+    const db = getDatabase(app);
+    const userData = {
+      fullName: user.fullName,
+      email: Email,
+      paidDate: paidDateC,
+      paidStatus: paidS,
+      profilePic: user.imageUrl,
+      score: scores + score,
+      transId: paymentId
+    };
+  
+    return update(ref(db, 'users/' + user.id), userData);
   }
-
-  useEffect (()=>{
-    getInfo();
-  }, [2]);
+  
  
   return (
-    <View>
+    <View style={{paddingBottom: 50}}>
       <View style={{width: "100%", alignItems: "center", padding: 10}}>
         <Text style={{fontSize: 20, fontWeight: "500"}}>{params.title}</Text>
       </View>
+      <KeyboardAvoidingView behavior='padding' >
       <FlatList
       data={data}
       keyExtractor={item => item?.id}
@@ -64,6 +73,7 @@ const WeeklyD = () => {
       )}
     
     />
+    </KeyboardAvoidingView>
     <TouchableOpacity onPress={()=>updateScores()} style={[styles.finish, {marginTop: height * 0.85, marginLeft: width * 0.8,}]}>
     <AntDesign name="check" size={38} color="white" padding={15}/>
     </TouchableOpacity>

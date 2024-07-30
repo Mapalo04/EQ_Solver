@@ -2,33 +2,42 @@ import { StyleSheet, Text, View, Image, ScrollView, FlatList, Dimensions, SafeAr
 import React, { useContext, useEffect, useState } from 'react'
 import Colors from '../hooks/Colors'
 import { useUser } from '@clerk/clerk-expo'
-import { gql, useQuery } from '@apollo/client'
-import { leaderBoardInfo } from '../hooks/Index'
 import { useIsFocused } from '@react-navigation/native'
-import { ScoreContext } from '../Context/Score'
+import { LeaderboardContext, ScoreContext } from '../Context/Score'
+import { child, get, getDatabase, onValue, ref } from 'firebase/database'
+import { app } from '../config/firebase'
 
 
 
 const LeaderBoard = () => {
+    const db = getDatabase(app);
+    const dbRef = ref(db);
     const {isLoaded, user} = useUser();
     const {score, setScore} = useContext(ScoreContext);
     const widthW = Dimensions.get('screen').width;
-    const [leaderBoardData, setLeaderBoardData] = useState([])
-    const isFocused =useIsFocused();
-    
-    useEffect(()=>{
-      updateLeaderBoard()
-    }, [isFocused])
-    const updateLeaderBoard = () => {
-      leaderBoardInfo().then(resp => {
-        resp&&setLeaderBoardData(resp.students);
-        /* console.log("respons...", resp) */
-      }).catch((err)=>{
-        console.log(err)
-      })
-    
-  }
+    const {leaderBoardData, setLeaderBoardData} = useContext(LeaderboardContext);
+    const isFocused = useIsFocused();
+    let students = [];
 
+
+    
+  
+  useEffect(()=>{
+    get(child(dbRef, `users/`)).then((snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+      for (const key in data){
+        students.push(data[key]);
+      }
+      setLeaderBoardData(students);
+      } else {
+        writeUserData();
+        console.log("No data available");
+      }
+    }).catch((error) => {
+      console.error(error);
+    });
+  }, [isFocused]);
  
 
   
@@ -53,7 +62,7 @@ const LeaderBoard = () => {
       <View style={[{borderRadius: 3}, styles.Position, styles.elevation]}>
         <View style={styles.PlayerInfo}>
             <Text style={styles.number}>{index+1}. </Text>
-            <Image style={{width: 50, height: 50, borderRadius: 99}} source={{uri: item.profilePic}} resizeMode='contain' />
+            <Image style={{width: 50, height: 50, borderRadius: 99}} source={{uri: item?.profilePic}} resizeMode='contain' />
             <Text> {item?.fullName}</Text>
         </View>
         <Text style={{fontWeight: "500"}}>{item?.score}</Text>

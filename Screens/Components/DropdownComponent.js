@@ -23,6 +23,8 @@ import { PaidContext, PaidDateContext } from '../../Context/Paid';
   const remainingDays = 30 - (timeStamp - paidDateC);
 
 
+  
+
     /* console.log("name.... ", title, "\ndata=>", data) */
     const renderLabel = () => {
       if (value || isFocus) {
@@ -42,10 +44,11 @@ import { PaidContext, PaidDateContext } from '../../Context/Paid';
         data: Data
       }
       )} else{
-        Alert.alert("Cannot access this material because you have not paid");
+        Alert.alert("Cannot access this Exercise because you have not paid");
         }
     }
     
+
 
     return (
       <View style={[styles.container, {width: widthS*0.95}]}>

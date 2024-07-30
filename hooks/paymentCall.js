@@ -53,6 +53,7 @@ const response = await axios(options);
 const settle = response.data.data.id;
 
 console.log("Stuff goes crazy", response.data.data.status)
+console.log("paying calll ", settle);
 updatePaymentId(settle)
 setPaying(true);
     } catch (err) {

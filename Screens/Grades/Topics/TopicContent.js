@@ -12,7 +12,9 @@ import SolutionR from './SolutionR';
 import { getStudentInfo, updateScore } from '../../../hooks/Index';
 import { useUser } from '@clerk/clerk-expo';
 import { ScoreContext } from '../../../Context/Score';
-import { PaidContext } from '../../../Context/Paid';
+import { PaidContext, PaidDateContext, PaymentIdContext } from '../../../Context/Paid';
+import { getDatabase, ref, update } from 'firebase/database';
+import { app } from '../../../config/firebase';
 
 const Tab = createMaterialTopTabNavigator()
 
@@ -23,35 +25,37 @@ const TopicContent = () => {
     const navigation = useNavigation();
     const [isFinished, setIsFinished] = useState(false);
     const {isLoaded, isSignedIn, user} = useUser();
+    const Email = user.primaryEmailAddress.emailAddress;
     const {scores, setScores} = useContext(ScoreContext);
-    const [score, setScore] = useState(0);
-    let ContentRef;
-    
-
+    const {paidS, setPaidS} = useContext(PaidContext);
+    const {paidDateC, setPaidDateC} = useContext(PaidDateContext);
+    const {paymentId, setPaymentId} = useContext(PaymentIdContext);
     const data = params.content;
-
+    const score = data.length * 5;
 
     const updateScores = () => {
       console.log("score before ", score)
-      updateScore(user?.primaryEmailAddress.emailAddress, score + (5*data.length)).then(resp =>{
-          console.log("updating score", resp.publishStudent.score);
-          setScores(resp.publishStudent.score);
-      }
-      )
+      setScores(score + scores)
+      updateUserData();
       navigation.goBack();
     }
-    const getInfo = () => {
-      getStudentInfo(user?.primaryEmailAddress.emailAddress).then(resp =>{
-          console.log("theee score ", resp.student.score)
-          setScore(resp.student.score);
-  
-      }
-      )
+
+    function updateUserData() {
+      // A post entry.
+      const db = getDatabase(app);
+      const userData = {
+        fullName: user.fullName,
+        email: Email,
+        paidDate: paidDateC,
+        paidStatus: paidS,
+        profilePic: user.imageUrl,
+        score: score + scores,
+        transId: paymentId
+      };
+    
+      return update(ref(db, 'users/' + user.id), userData);
     }
-  
-    useEffect (()=>{
-      getInfo();
-    }, [3]);
+
 
   return (
     <SafeAreaView style={styles.mainContainer}>

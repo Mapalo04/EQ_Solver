@@ -6,19 +6,27 @@ import { Button, Menu } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { FontAwesome } from '@expo/vector-icons';
+import Entypo from '@expo/vector-icons/Entypo';
 import { ScrollView } from 'react-native-gesture-handler';
 import Colors from '../hooks/Colors';
 import { AntDesign } from '@expo/vector-icons';
 import { updateIsPaid} from '../hooks/Index';
-import { useNavigation } from '@react-navigation/native';
-import { PaidDateContext } from '../Context/Paid';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
+import { PaidContext, PaidDateContext, PaymentIdContext } from '../Context/Paid';
 import { ScoreContext } from '../Context/Score';
+import { child, get, getDatabase, ref } from 'firebase/database';
+import { app } from '../config/firebase';
 
 
 const Profile = () => {
+  const db = getDatabase(app);
+  const dbRef = ref(db);
   const {isLoaded, isSignedIn, user} = useUser();
+  const Email = user.primaryEmailAddress.emailAddress;
   const {paidDateC, setPaidDateC} = useContext(PaidDateContext);
   const {scores, setScores} = useContext(ScoreContext);
+  const {paidS, setPaidS} = useContext(PaidContext);
+  const {paymentId, setPaymentId} = useContext(PaymentIdContext);
   const Vsize = 14;
   const paidDate = paidDateC;
   const { signOut } = useAuth();
@@ -27,7 +35,7 @@ const Profile = () => {
   const closeMenu = () => setVisibleMenu(false);
   const openMenu = () => setVisibleMenu(true);
   const navigation = useNavigation();
-
+  const isFocused = useIsFocused();
   const minute = 1000 * 60;
   const hour = minute * 60;
   const day = hour * 24;
@@ -36,14 +44,29 @@ const Profile = () => {
   const remainingDays = 30 - (timeStamp - paidDate);
 
 
-  if (!isLoaded) {
-    // Handle loading state however you like
-    return null;
+  function updateUserData() {
+    // A post entry.
+    const userData = {
+      fullName: user.fullName,
+      email: Email,
+      paidDate: paidDateC,
+      paidStatus: paidS,
+      profilePic: user.imageUrl,
+      score: scores,
+      transId: paymentId
+    };
+  
+    return update(ref(db, 'users/' + user.id), userData);
   }
 
   if (!user) return null;
 
 
+  try {
+    
+  } catch(e){
+    console.error(e);
+  }
 
   const updateProfileImage = async () => {
     // Ensure permissions; Expo's ImagePicker may require permissions to access the gallery
@@ -66,8 +89,8 @@ const Profile = () => {
           file: image,
         });
 
-          updateInfo(false);
-          updateInfo(false);
+        updateUserData();
+          
       }
     } catch (err) {
       alert(err.errors[0].message);
@@ -85,11 +108,24 @@ const Profile = () => {
     ]);
  
 
-
+    useEffect(()=>{
+      get(child(dbRef, `users/${user.id}`)).then((snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          setPaidDateC(data.paidDate);
+    
+        } else {
+          writeUserData();
+          console.log("No data available");
+        }
+      }).catch((error) => {
+        console.error(error);
+      });
+    }, [isFocused])
   return (
     <View >
       <View style={{alignItems: "flex-end", width: widthW, padding: 10}}>
-      <Menu
+      {/* <Menu
       visible={visibleMenu}
       onDismiss={closeMenu}
       anchor={
@@ -104,7 +140,11 @@ const Profile = () => {
         <Menu.Item onPress={()=>LogOutAlert()} title="Logout" leadingIcon={()=>
           <AntDesign name="logout" size={24} color={"black"} />
         }/>
-      </Menu>
+      </Menu> */}
+      <TouchableOpacity onPress={()=>LogOutAlert()} style={{backgroundColor: Colors.SECONDARY, alignItems: "center", padding: 10, borderRadius: 5, flexDirection: "row"}}>
+        <AntDesign name="logout" size={24} color={"white"} />
+        <Text style={{color: "white"}}>  LogOut</Text>
+        </TouchableOpacity>
       </View>
       
       {/* <View style={{width: "100%", padding: 5, flexDirection: "row", justifyContent: "space-between"}}>
@@ -146,10 +186,10 @@ const Profile = () => {
             </View>
           </View>
           <View style={styles.Content}>
-            <Text style={styles.Type}>Weekly Exercises Completed:</Text>
+            <Text style={styles.Type}>Email:</Text>
             <View style={{flexDirection: "row", alignItems: "center"}}>
-            <Text style={styles.TypeSecondary}>40 </Text>
-            <FontAwesome name="tasks" size={Vsize} color="black" />
+            <Text style={styles.TypeSecondary}>{Email} </Text>
+            <Entypo name="mail" size={24} color="black" />
             </View>
           </View>
           <View style={styles.Content}>
@@ -173,6 +213,11 @@ const Profile = () => {
             <FontAwesome5 name="coins" size={Vsize} color="black" />
             </View>
           </View>
+          {remainingDays <= 0 && <View style={{width: "100%", backgroundColor: "blue", alignItems: "center", marginTop: 20, borderRadius: 20}}>
+          <TouchableOpacity style={[styles.PaymentButton, {margin: 15}]} onPress={()=>navigation.navigate('Payments', {remainingDays: remainingDays })}>
+        <Text style={{fontSize: 25, color: "white"}}>{"Pay"}</Text>
+      </TouchableOpacity>
+          </View>}
         </View>
       </ScrollView>
     </View>
@@ -205,6 +250,14 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     
   },
+  PaymentButton: {
+    backgroundColor: "tomato",
+    width: 210,
+    height: 50,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 5,
+},
   elevation: {
     shadowColor: '#52006A',
     elevation: 1,

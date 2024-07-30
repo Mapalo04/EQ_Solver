@@ -12,18 +12,24 @@ import Tasks from './Tasks'
 import { useUser } from '@clerk/clerk-expo'
 import { getStudentInfo, updateIsPaid, updateProfileInfo, updateTransId } from '../hooks/Index'
 import { gql, useQuery } from '@apollo/client'
-import { ScoreContext } from '../Context/Score'
+import { LeaderboardContext, ScoreContext } from '../Context/Score'
 import { PaidContext, PaidDateContext, PaymentIdContext } from '../Context/Paid'
 import { useIsFocused } from '@react-navigation/native'
+import { app } from '../config/firebase'
+import { child, get, getDatabase, onValue, push, ref, set, update } from 'firebase/database'
 
 const Tab = createBottomTabNavigator();
-
+const db = getDatabase(app);
+const dbRef = ref(db);
 const HomeScreen = () => {
   const {isLoaded, isSignedIn, user} = useUser();
+  const Email = user.primaryEmailAddress.emailAddress;
   const {scores, setScores} = useContext(ScoreContext);
   const {paidS, setPaidS} = useContext(PaidContext);
   const {paidDateC, setPaidDateC} = useContext(PaidDateContext);
   const {paymentId, setPaymentId} = useContext(PaymentIdContext);
+  const {leaderBoardData, setLeaderBoardData} = useContext(LeaderboardContext);
+  const isFocused = useIsFocused();
   const [creatingUser, setCreateUser] = useState(false);
   const [paidStatus, setPaidStatus] = useState("No");
   const minute = 1000 * 60;
@@ -31,63 +37,92 @@ const HomeScreen = () => {
   const day = hour * 24;
   const T = new Date();
   const timeStamp = Math.round(T.getTime()/day);
-  const isFocused =useIsFocused();
-  
+  let students = [];
 
-  const updateInfo = (paidUpdate) => {
-    console.log(paidStatus)
-    updateProfileInfo(paidUpdate, paidStatus, user, user.fullName).then(resp => {
-    }).catch((err)=>{
-      console.log(err)
-    })
-  
+
+  //get info from the realtime database
+  try {
+  useEffect(()=>{
+  get(child(dbRef, `users/${user.id}`)).then((snapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      setScores(data.score);
+      setPaidS(data.paidStatus);
+      setPaidDateC(data.paidDate);
+      setPaymentId(data.transId);
+      console.log(scores)
+      if (remainingDays <= 0){
+        updateUserData("No", "NotPaid", data.paidDate, data.score)
+      }
+
+    } else {
+      writeUserData();
+      console.log("No data available");
+    }
+  }).catch((error) => {
+    console.error(error);
+  });
+  get(child(dbRef, `users/`)).then((snapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+    for (const key in data){
+      students.push(data[key]);
+    }
+    setLeaderBoardData(students);
+    } else {
+      writeUserData();
+      console.log("No data available");
+    }
+  }).catch((error) => {
+    console.error(error);
+  });
+
+    
+
+  /* const userRef = ref(db, 'users/' + user.id);
+  onValue(userRef, (snapshot) => {
+      const data = snapshot.val();
+}); */
+  }, [100])
+
+} catch (e) {
+  console.log(e)
 }
 
-  const getInfo = () => {
-    getStudentInfo(user?.primaryEmailAddress.emailAddress).then(resp =>{
-        updateInfo(false);
-        console.log("home", resp.student);
-        setScores(resp.student.score);
-        setPaidS(resp.student.paidStatus);
-        setPaidDateC(resp.student.paidDate);
-        setPaymentId(resp.student.transId);
-    }
-    )
-  }
-  const updatePaidStatus = (Paid) => {
-    updateIsPaid(user?.primaryEmailAddress.emailAddress, Paid).then(resp =>{
+//write data to the realtime database
+function writeUserData() {
+  set(ref(db, 'users/' + user.id), {
+    fullName: user.fullName,
+    email: Email,
+    paidDate: 0,
+    paidStatus: "No",
+    profilePic: user.imageUrl,
+    score: 0,
+    transId: "id"
+  });
+}
 
-    }
-    )
-  }
-  const updatePaymentId = () => {
-    setPaymentId("");
-    updateTransId(Email, "notpaid").then(resp => {
-      console.log("paying", transid)
-    }).catch((err)=>{
-      console.log(err)
-    })
-  
-  }
+function updateUserData(paidStatus, transId, paidDate, score) {
+  // A post entry.
+  const userData = {
+    fullName: user.fullName,
+    email: Email,
+    paidDate: paidDate,
+    paidStatus: paidStatus,
+    profilePic: user.imageUrl,
+    score: score,
+    transId: transId
+  };
+
+  return update(ref(db, 'users/' + user.id), userData);
+}
+
+
   
 
   const remainingDays = 30 - (timeStamp - paidDateC);
   
 
-  
-  useEffect(()=>{
-    setPaidStatus(paidS)
-    getInfo()
-    if (remainingDays <= 0){
-      setPaidS("No");
-      updatePaidStatus("No");
-      updatePaymentId();
-    } else {
-      setPaidS("Yes");
-      updatePaidStatus("Yes");
-    }
-  }, [isFocused])
-  
   return (
     <>
     
